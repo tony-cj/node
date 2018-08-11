@@ -543,7 +543,7 @@ TEST(MIPS6) {
   } T;
   T t;
 
-  Assembler assm(isolate, nullptr, 0);
+  Assembler assm(AssemblerOptions{}, nullptr, 0);
   Label L, C;
 
   // Basic word load/store.
@@ -909,7 +909,7 @@ TEST(MIPS11) {
   } T;
   T t;
 
-  Assembler assm(isolate, nullptr, 0);
+  Assembler assm(AssemblerOptions{}, nullptr, 0);
 
   // Test all combinations of LWL and vAddr.
   __ lw(t0, MemOperand(a0, offsetof(T, reg_init)) );
@@ -1334,7 +1334,7 @@ TEST(MIPS15) {
   CcTest::InitializeVM();
   Isolate* isolate = CcTest::i_isolate();
   HandleScope scope(isolate);
-  Assembler assm(isolate, nullptr, 0);
+  Assembler assm(AssemblerOptions{}, nullptr, 0);
 
   Label target;
   __ beq(v0, v1, &target);
@@ -3151,7 +3151,7 @@ TEST(jump_tables1) {
   CcTest::InitializeVM();
   Isolate* isolate = CcTest::i_isolate();
   HandleScope scope(isolate);
-  Assembler assm(isolate, nullptr, 0);
+  Assembler assm(AssemblerOptions{}, nullptr, 0);
 
   const int kNumCases = 512;
   int values[kNumCases];
@@ -3164,8 +3164,7 @@ TEST(jump_tables1) {
   Label done;
   {
     __ BlockTrampolinePoolFor(kNumCases + 7);
-    PredictableCodeSizeScope predictable(
-        &assm, (kNumCases + 7) * Assembler::kInstrSize);
+    PredictableCodeSizeScope predictable(&assm, (kNumCases + 7) * kInstrSize);
     Label here;
 
     __ bal(&here);
@@ -3173,7 +3172,7 @@ TEST(jump_tables1) {
     __ bind(&here);
     __ sll(at, a0, 2);
     __ addu(at, at, ra);
-    __ lw(at, MemOperand(at, 5 * Assembler::kInstrSize));
+    __ lw(at, MemOperand(at, 5 * kInstrSize));
     __ jr(at);
     __ nop();
     for (int i = 0; i < kNumCases; ++i) {
@@ -3218,7 +3217,7 @@ TEST(jump_tables2) {
   CcTest::InitializeVM();
   Isolate* isolate = CcTest::i_isolate();
   HandleScope scope(isolate);
-  Assembler assm(isolate, nullptr, 0);
+  Assembler assm(AssemblerOptions{}, nullptr, 0);
 
   const int kNumCases = 512;
   int values[kNumCases];
@@ -3243,8 +3242,7 @@ TEST(jump_tables2) {
   __ bind(&dispatch);
   {
     __ BlockTrampolinePoolFor(kNumCases + 7);
-    PredictableCodeSizeScope predictable(
-        &assm, (kNumCases + 7) * Assembler::kInstrSize);
+    PredictableCodeSizeScope predictable(&assm, (kNumCases + 7) * kInstrSize);
     Label here;
 
     __ bal(&here);
@@ -3252,7 +3250,7 @@ TEST(jump_tables2) {
     __ bind(&here);
     __ sll(at, a0, 2);
     __ addu(at, at, ra);
-    __ lw(at, MemOperand(at, 5 * Assembler::kInstrSize));
+    __ lw(at, MemOperand(at, 5 * kInstrSize));
     __ jr(at);
     __ nop();
     for (int i = 0; i < kNumCases; ++i) {
@@ -3287,13 +3285,13 @@ TEST(jump_tables3) {
   CcTest::InitializeVM();
   Isolate* isolate = CcTest::i_isolate();
   HandleScope scope(isolate);
-  Assembler assm(isolate, nullptr, 0);
+  Assembler assm(AssemblerOptions{}, nullptr, 0);
 
   const int kNumCases = 256;
   Handle<Object> values[kNumCases];
   for (int i = 0; i < kNumCases; ++i) {
     double value = isolate->random_number_generator()->NextDouble();
-    values[i] = isolate->factory()->NewHeapNumber(value, IMMUTABLE, TENURED);
+    values[i] = isolate->factory()->NewHeapNumber(value, TENURED);
   }
   Label labels[kNumCases];
   Object* obj;
@@ -3319,8 +3317,7 @@ TEST(jump_tables3) {
   __ bind(&dispatch);
   {
     __ BlockTrampolinePoolFor(kNumCases + 7);
-    PredictableCodeSizeScope predictable(
-        &assm, (kNumCases + 7) * Assembler::kInstrSize);
+    PredictableCodeSizeScope predictable(&assm, (kNumCases + 7) * kInstrSize);
     Label here;
 
     __ bal(&here);
@@ -3328,7 +3325,7 @@ TEST(jump_tables3) {
     __ bind(&here);
     __ sll(at, a0, 2);
     __ addu(at, at, ra);
-    __ lw(at, MemOperand(at, 5 * Assembler::kInstrSize));
+    __ lw(at, MemOperand(at, 5 * kInstrSize));
     __ jr(at);
     __ nop();
     for (int i = 0; i < kNumCases; ++i) {
@@ -3377,7 +3374,7 @@ TEST(BITSWAP) {
     } T;
     T t;
 
-    Assembler assm(isolate, nullptr, 0);
+    Assembler assm(AssemblerOptions{}, nullptr, 0);
 
     __ lw(a2, MemOperand(a0, offsetof(T, r1)));
     __ nop();
@@ -5557,7 +5554,7 @@ TEST(Trampoline) {
   MacroAssembler assm(isolate, nullptr, 0,
                       v8::internal::CodeObjectRequired::kYes);
   Label done;
-  size_t nr_calls = kMaxBranchOffset / (2 * Instruction::kInstrSize) + 2;
+  size_t nr_calls = kMaxBranchOffset / (2 * kInstrSize) + 2;
 
   for (size_t i = 0; i < nr_calls; ++i) {
     __ BranchShort(&done, eq, a0, Operand(a1));
@@ -5715,8 +5712,7 @@ uint32_t run_Subu(uint32_t imm, int32_t num_instr) {
   Label code_start;
   __ bind(&code_start);
   __ Subu(v0, zero_reg, imm);
-  CHECK_EQ(assm.SizeOfCodeGeneratedSince(&code_start),
-           num_instr * Assembler::kInstrSize);
+  CHECK_EQ(assm.SizeOfCodeGeneratedSince(&code_start), num_instr * kInstrSize);
   __ jr(ra);
   __ nop();
 
