@@ -87,6 +87,15 @@ TLSWrap::~TLSWrap() {
   sni_context_.Reset();
 #endif  // SSL_CTRL_SET_TLSEXT_SERVERNAME_CB
 
+  if (stream_ != nullptr) {
+    stream_->set_destruct_cb({ nullptr, nullptr });
+    stream_->set_after_write_cb({ nullptr, nullptr });
+    stream_->set_alloc_cb({ nullptr, nullptr });
+    stream_->set_read_cb({ nullptr, nullptr });
+    stream_->set_destruct_cb({ nullptr, nullptr });
+    stream_->Unconsume();
+  }
+
   ClearError();
 }
 
